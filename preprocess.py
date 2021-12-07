@@ -4,6 +4,7 @@ email: jian.jiang@kcl.ac.uk
 """
 import numpy as np
 import pysrt
+from pathlib import Path
 PART1 = 'PART.1: '
 PART2 = 'PART.2: '
 EPS = 10
@@ -56,10 +57,16 @@ def chunk_subs(subs):
 
 def process_srt_files(dir_path):
     data = {}
+    mode = dir_path.split('_')[0]
 
-    from pathlib import Path
     for path in Path(dir_path).rglob('*.srt'):
-        subs = pysrt.open(path)
+        #  encoding= 'unicode_escape' is not right
+        try:
+            subs = pysrt.open(path, encoding='utf-8')
+        except:
+            print(path)
+        # subs = pysrt.open(path, encoding='utf-8')
+
         file_name = path.stem
         label_part1 = int(file_name[:3])
         label_part2 = int(file_name[3:6])
@@ -90,23 +97,28 @@ def process_srt_files(dir_path):
         for chunk in chunks:
             data_np.append(chunk)
     data_np = np.array(data_np)
-    np.save('raw_data', data_np)
+    np.save(mode + '_raw_data', data_np)
     return data_np
 
 
 def main():
-    dir_path = 'training_data_transcripts'
-    data = process_srt_files(dir_path)
-    loaded_data = np.load('raw_data.npy')
-    is_equal = np.array_equal(data, loaded_data)
+    # dir_path = 'training_data_transcripts'
+    dir_path = 'test_data_transcripts'
+    # dir_path = 'valid_data_transcripts'
+    for dir_path in ['training_data_transcripts', 'test_data_transcripts', 'valid_data_transcripts']:
+        data = process_srt_files(dir_path)
+        file_name = dir_path.split('_')[0]
+        loaded_data = np.load(file_name + '_raw_data.npy')
+        is_equal = np.array_equal(data, loaded_data)
 
-    print(is_equal)
+        print(is_equal)
 
 
 if __name__ == '__main__':
     ##################
     # Test a single srt file
     # subs = pysrt.open('043079_animals.srt')
+    # subs = pysrt.open('008105_talk.srt')
     # sub_part1, sub_part2 = divide_participants(subs)
     # chunks_part1 = chunk_subs(sub_part1)
     # chunks_part2 = chunk_subs(sub_part2)

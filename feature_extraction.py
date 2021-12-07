@@ -55,8 +55,8 @@ def encode_data2features(data_path):
 	"""
 	encode the raw data to features and save features to file
 	"""
-	# data_path = "raw_data.npy"
 	batch_size = 128
+	mode = data_path.split('_')[0]
 	ds = ChunksDataset(data_path)
 	loader = DataLoader(ds, batch_size=batch_size, shuffle=False)
 
@@ -77,13 +77,18 @@ def encode_data2features(data_path):
 	all_embs = np.array(all_embs)
 	all_part_ids = np.array(all_part_ids)
 
-	np.savez("embeddings.npz", emb=all_embs, label=all_part_ids)
+	np.savez(mode + "_embeddings.npz", emb=all_embs, label=all_part_ids)
 
 
 def main():
-	raw_data_path = "raw_data.npy"
-	encode_data2features(raw_data_path)
-	data_path = "embeddings.npz"
-	ds = EmbsDataset(data_path)
+	for mode in ['training', 'test', 'valid']:
+		# raw_data_path = mode + "_raw_data.npy"
+		# encode_data2features(raw_data_path)
+		data_path = "embeddings/" + mode + "_embeddings.npz"
+		data = np.load(data_path)
+		ds = EmbsDataset(data_path)
+		unique_labels = np.unique(ds.label)
+		print(f'{mode} embeddings: number of unique labels {len(unique_labels)}; labels {unique_labels}; ')
+		k=1
 
 main()
