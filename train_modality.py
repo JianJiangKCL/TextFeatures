@@ -9,12 +9,6 @@ import tensorflow as tf
 import pandas as pd
 
 #%%
-
-# Reading files.
-
-# change paths here.
-# meta-data
-
 def df_drop_cols(df, cols):
     for col in cols:
         try:
@@ -24,15 +18,26 @@ def df_drop_cols(df, cols):
             pass
     return df
 
-def read_data(path):
+def read_data_gender(path):
     data = pd.read_csv(path)
     M = data[data['gender'] == 'M']
     F = data[data['gender'] == 'F']
     return data, M, F
 
-def build_dataset(root, mode):
+def read_data_age(path):
+    data = pd.read_csv(path)
+
+    Y = data[data['age'] <= 30]
+    O = data[data['age'] > 30]
+    return data, Y, O
+
+def build_dataset(root, mode, seperator):
     labels = ['OPENMINDEDNESS_Z', 'CONSCIENTIOUSNESS_Z', 'EXTRAVERSION_Z', 'AGREEABLENESS_Z', 'NEGATIVEEMOTIONALITY_Z']
 
+    if seperator == 'age':
+        read_data = read_data_age
+    elif seperator == 'gender':
+        read_data = read_data_gender
     if mode == 'train':
         train_path = os.path.join(root, f'train_data.csv')
         data, M, F = read_data(train_path)
@@ -96,12 +101,15 @@ def build_dataset(root, mode):
 
     return comb_dataset, M_dataset, F_dataset
 
-comb_train_set, M_train_set, F_train_set = build_dataset('multi_modality_csv', 'train')
+# comb_train_set, M_train_set, F_train_set = build_dataset('multi_modality_csv', 'train', 'gender')
+#
+# comb_val_set, M_val_set, F_val_set = build_dataset('multi_modality_csv', 'validation', 'gender')
 
-comb_val_set, M_val_set, F_val_set = build_dataset('multi_modality_csv', 'validation')
+comb_train_set, Y_train_set, O_train_set = build_dataset('multi_modality_csv', 'train', 'age')
+
+comb_val_set, Y_val_set, O_val_set = build_dataset('multi_modality_csv', 'validation', 'age')
 
 # comb_test_set , M_test_set, F_test_set = build_dataset('multi_modality_csv', 'test')
-
 
 model_names = ['Model_O','Model_C','Model_E','Model_A','Model_N']
 
@@ -138,24 +146,6 @@ for folder in folders:
     except OSError as error:
         print(error)
 
-#%% md
-
-# Training
-
-#%% md
-
-## Combined
-
-#%%
-
-"""# Train
-Currently:  
-Validation split: 0.15  
-Epochs: 1000  
-Trials: 100  
-## Combined models
-"""
-
 def train_setting(setting, train_set, val_set, path):
     print(f"{setting} TRAINING BEGINS")
     # iter for 5 OCEAN dataset
@@ -189,6 +179,6 @@ def train_setting(setting, train_set, val_set, path):
 
 
 # train_setting('Female', F_train_set, F_val_set, female_path)
-train_setting('Male', M_train_set, M_val_set, male_path)
-train_setting('Female', F_train_set, F_val_set, female_path)
-train_setting('Combined', comb_train_set, comb_val_set, combined_path)
+# train_setting('Male', M_train_set, M_val_set, male_path)
+# train_setting('Female', F_train_set, F_val_set, female_path)
+# train_setting('Combined', comb_train_set, comb_val_set, combined_path)
