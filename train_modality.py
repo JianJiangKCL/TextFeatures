@@ -24,40 +24,26 @@ import pandas as pd
 # val_path = '../Features/TextualFeatures_csv/alltextual_nosenti_valid.csv'
 # test_path = '../Features/TextualFeatures_csv/alltextual_nosenti_test.csv'
 
-def build_dataset(root, modality):
-    session_train = pd.read_csv('../CSV files/session_train.csv')
-    session_validation = pd.read_csv('../CSV files/session_val.csv')
-    session_test = pd.read_csv('../CSV files/final_test.csv')
+def df_drop_cols(df, cols):
+    for col in cols:
+        try:
+            df.drop(
+                [col], axis=1, inplace=True)
+        except:
+            pass
+    return df
+
+def build_dataset(root):
+
     train_path = os.path.join(root, 'train_data.csv')
     test_path = os.path.join(root, 'test_data.csv')
     val_path = os.path.join(root, 'validation_data.csv')
+
     data_validation = pd.read_csv(val_path)
     data_train = pd.read_csv(train_path)
     data_test = pd.read_csv(test_path)
 
-    if modality == 'Bert':
-        drop_cols = ['Unnamed: 0']
-    else:
-        drop_cols = ['Unnamed: 0', 'Video']
-
-    data_validation.drop(drop_cols, axis = 1, inplace=True)
-    data_train.drop(drop_cols, axis = 1, inplace=True)
-    data_test.drop(drop_cols, axis = 1, inplace=True)
-
-
-    #%%
-    #todo the facebody data already has the meta-data, i.e. labels, so we can use it directly.
-    # combining data with meta-data
-
-    # data_train = pd.merge(session_train, data_train, left_on='ID_y', right_on='ID_y').drop_duplicates()
-    # data_validation = pd.merge(session_validation, data_validation, left_on='ID_y', right_on='ID_y').drop_duplicates()
-    # data_test = pd.merge(session_test, data_test, left_on='ID_y', right_on='ID_y').drop_duplicates()
-
-    #%%
-
     data_test.head()
-
-    #%%
 
     labels = ['OPENMINDEDNESS_Z', 'CONSCIENTIOUSNESS_Z', 'EXTRAVERSION_Z', 'AGREEABLENESS_Z', 'NEGATIVEEMOTIONALITY_Z']
 
@@ -157,25 +143,36 @@ def build_dataset(root, modality):
 
     #%%
     # following train data only has the feature data
-    if modality == 'Facebody':
-        data_cols = ['ID_y','minute', 'session', 'gender'] #, 'age']
-    elif modality == 'Bert' :
-        data_cols = ['ID_y', 'minute', 'gender', 'age']
-    elif modality == 'Textual':
-        data_cols = ['ID_y', 'minute', 'session', 'gender', 'age']
+
+    data_cols = ['ID_y', 'minute', 'session', 'gender', 'age','Unnamed: 0', 'Video', 'Unnamed: 0.1']
+
     # combined
-    train_com = df_train.drop(data_cols+drop_cols, axis = 1)
-    val_com   = df_validation.drop(data_cols+drop_cols, axis = 1)
-    test_com  = df_test.drop(data_cols+drop_cols, axis = 1)
+    train_com = df_drop_cols(df_train, data_cols+drop_cols)
+    val_com = df_drop_cols(df_validation, data_cols+drop_cols)
+    test_com = df_drop_cols(df_test, data_cols+drop_cols)
+
+
+    Fb_drop_cols = [(f'{i}_fb') for i in range(0, 552)]
+    Bt_drop_cols = [(f'{i}_bt') for i in range(0, 512)]
+
+    train_comb_bt = np.array(train_com.drop([*Fb_drop_cols], axis=1))
+    train_comb_fb = np.array(train_com.drop([*Bt_drop_cols], axis=1))
+
+    val_comb_bt =   np.array(val_com.drop([*Fb_drop_cols], axis=1))
+    val_comb_fb = np.array(val_com.drop([*Bt_drop_cols], axis=1))
+
+    test_comb_bt = np.array(test_com.drop([*Fb_drop_cols], axis=1))
+    test_comb_fb = np.array(test_com.drop([*Bt_drop_cols], axis=1))
+
 
     # Gender
-    M_train = M_train.drop(data_cols+drop_cols, axis = 1)
-    M_val = M_val.drop(data_cols+drop_cols, axis = 1)
-    M_test = M_test.drop(data_cols+drop_cols, axis = 1)
-
-    F_train = F_train.drop(data_cols+drop_cols, axis = 1)
-    F_val = F_val.drop(data_cols+drop_cols, axis = 1)
-    F_test = F_test.drop(data_cols+drop_cols, axis = 1)
+    # M_train = M_train.drop(data_cols+drop_cols, axis = 1)
+    # M_val = M_val.drop(data_cols+drop_cols, axis = 1)
+    # M_test = M_test.drop(data_cols+drop_cols, axis = 1)
+    #
+    # F_train = F_train.drop(data_cols+drop_cols, axis = 1)
+    # F_val = F_val.drop(data_cols+drop_cols, axis = 1)
+    # F_test = F_test.drop(data_cols+drop_cols, axis = 1)
 
     #%%
 
@@ -185,80 +182,77 @@ def build_dataset(root, modality):
     test_data.reset_index(drop = True, inplace = True)
 
     # Gender
-    M_train.reset_index(drop=True, inplace=True)
-    M_train_data.reset_index(drop=True, inplace=True)
-    M_test.reset_index(drop=True, inplace=True)
-    M_test_data.reset_index(drop = True, inplace = True)
-    M_val.reset_index(drop=True, inplace=True)
-    M_val_data.reset_index(drop=True, inplace=True)
-
-    F_train.reset_index(drop=True, inplace=True)
-    F_train_data.reset_index(drop=True, inplace=True)
-    F_val.reset_index(drop=True, inplace=True)
-    F_val_data.reset_index(drop=True, inplace=True)
-    F_test.reset_index(drop=True, inplace=True)
-    F_test_data.reset_index(drop = True, inplace = True)
+    # M_train.reset_index(drop=True, inplace=True)
+    # M_train_data.reset_index(drop=True, inplace=True)
+    # M_test.reset_index(drop=True, inplace=True)
+    # M_test_data.reset_index(drop = True, inplace = True)
+    # M_val.reset_index(drop=True, inplace=True)
+    # M_val_data.reset_index(drop=True, inplace=True)
+    #
+    # F_train.reset_index(drop=True, inplace=True)
+    # F_train_data.reset_index(drop=True, inplace=True)
+    # F_val.reset_index(drop=True, inplace=True)
+    # F_val_data.reset_index(drop=True, inplace=True)
+    # F_test.reset_index(drop=True, inplace=True)
+    # F_test_data.reset_index(drop = True, inplace = True)
 
 
     OCEAN_models = ['Model_O', 'Model_C', 'Model_E', 'Model_A', 'Model_N']
-    # Combined
-    train_com_np = np.array(train_com)
-    val_com_np = np.array(val_com)
-    test_com_np = np.array(test_com)
+
 
     # GEnder
-    M_train_np = np.array(M_train)
-    M_test_np  = np.array(M_test)
-    M_val_np   = np.array(M_val)
-
-
-    F_train_np = np.array(F_train)
-    F_val_np   = np.array(F_val)
-    F_test_np  = np.array(F_test)
+    # M_train_np = np.array(M_train)
+    # M_test_np  = np.array(M_test)
+    # M_val_np   = np.array(M_val)
+    #
+    #
+    # F_train_np = np.array(F_train)
+    # F_val_np   = np.array(F_val)
+    # F_test_np  = np.array(F_test)
 
 
 
     #%%
-    def tmp(a, b):
-        return (a, b)
+    def tmp(m1, m2, gt):
+        return (m1, m2 ,gt)
     # Combined
-    comb_O_train_set = tmp(train_com_np, train_O)
-    comb_C_train_set = tmp(train_com_np, train_C)
-    comb_E_train_set = tmp(train_com_np, train_E)
-    comb_A_train_set = tmp(train_com_np, train_A)
-    comb_N_train_set = tmp(train_com_np, train_N)
+    comb_O_train_set = tmp(train_comb_fb, train_comb_bt, train_O)
+    comb_C_train_set = tmp(train_comb_fb, train_comb_bt, train_C)
+    comb_E_train_set = tmp(train_comb_fb, train_comb_bt, train_E)
+    comb_A_train_set = tmp(train_comb_fb, train_comb_bt, train_A)
+    comb_N_train_set = tmp(train_comb_fb, train_comb_bt, train_N)
 
-    comb_O_validation_set = tmp(val_com_np, val_O)
-    comb_C_validation_set = tmp(val_com_np, val_C)
-    comb_E_validation_set = tmp(val_com_np, val_E)
-    comb_A_validation_set = tmp(val_com_np, val_A)
-    comb_N_validation_set = tmp(val_com_np, val_N)
+    comb_O_validation_set = tmp(val_comb_fb, val_comb_bt, val_O)
+    comb_C_validation_set = tmp(val_comb_fb, val_comb_bt, val_C)
+    comb_E_validation_set = tmp(val_comb_fb, val_comb_bt, val_E)
+    comb_A_validation_set = tmp(val_comb_fb, val_comb_bt, val_A)
+    comb_N_validation_set = tmp(val_comb_fb, val_comb_bt, val_N)
 
 
-    # Gender
-    maleO_train_set = tmp(M_train_np, M_train_O)
-    maleC_train_set = tmp(M_train_np, M_train_C)
-    maleE_train_set = tmp(M_train_np, M_train_E)
-    maleA_train_set = tmp(M_train_np, M_train_A)
-    maleN_train_set = tmp(M_train_np, M_train_N)
-
-    femaleO_train_set = tmp(F_train_np, F_train_O)
-    femaleC_train_set = tmp(F_train_np, F_train_C)
-    femaleE_train_set = tmp(F_train_np, F_train_E)
-    femaleA_train_set = tmp(F_train_np, F_train_A)
-    femaleN_train_set = tmp(F_train_np, F_train_N)
-
-    maleO_validation_set = tmp(M_val_np, M_val_O)
-    maleC_validation_set = tmp(M_val_np, M_val_C)
-    maleE_validation_set = tmp(M_val_np, M_val_E)
-    maleA_validation_set = tmp(M_val_np, M_val_A)
-    maleN_validation_set = tmp(M_val_np, M_val_N)
-
-    femaleO_validation_set = tmp(F_val_np, F_val_O)
-    femaleC_validation_set = tmp(F_val_np, F_val_C)
-    femaleE_validation_set = tmp(F_val_np, F_val_E)
-    femaleA_validation_set = tmp(F_val_np, F_val_A)
-    femaleN_validation_set = tmp(F_val_np, F_val_N)
+    # # Gender
+    # maleO_train_set = tmp(M_train_np, M_train_O)
+    # maleC_train_set = tmp(M_train_np, M_train_C)
+    # maleE_train_set = tmp(M_train_np, M_train_E)
+    # maleA_train_set = tmp(M_train_np, M_train_A)
+    # maleN_train_set = tmp(M_train_np, M_train_N)
+    #
+    # femaleO_train_set = tmp(F_train_np, F_train_O)
+    # femaleC_train_set = tmp(F_train_np, F_train_C)
+    # femaleE_train_set = tmp(F_train_np, F_train_E)
+    # femaleA_train_set = tmp(F_train_np, F_train_A)
+    # femaleN_train_set = tmp(F_train_np, F_train_N)
+    #
+    # maleO_validation_set = tmp(M_val_np, M_val_O)
+    # maleC_validation_set = tmp(M_val_np, M_val_C)
+    # maleE_validation_set = tmp(M_val_np, M_val_E)
+    # maleA_validation_set = tmp(M_val_np, M_val_A)
+    # maleN_validation_set = tmp(M_val_np, M_val_N)
+    #
+    # femaleO_validation_set = tmp(F_val_np, F_val_O)
+    # femaleC_validation_set = tmp(F_val_np, F_val_C)
+    # femaleE_validation_set = tmp(F_val_np, F_val_E)
+    # femaleA_validation_set = tmp(F_val_np, F_val_A)
+    # femaleN_validation_set = tmp(F_val_np, F_val_N)
 
 
     #%%
@@ -277,33 +271,32 @@ def build_dataset(root, modality):
                            comb_N_validation_set]
 
     # Gender
-    male_train_set =      [maleO_train_set,
-                           maleC_train_set,
-                           maleE_train_set,
-                           maleA_train_set,
-                           maleN_train_set]
-    male_validation_set = [maleO_validation_set,
-                           maleC_validation_set,
-                           maleE_validation_set,
-                           maleA_validation_set,
-                           maleN_validation_set]
+    # male_train_set =      [maleO_train_set,
+    #                        maleC_train_set,
+    #                        maleE_train_set,
+    #                        maleA_train_set,
+    #                        maleN_train_set]
+    # male_validation_set = [maleO_validation_set,
+    #                        maleC_validation_set,
+    #                        maleE_validation_set,
+    #                        maleA_validation_set,
+    #                        maleN_validation_set]
+    #
+    # female_train_set =      [femaleO_train_set,
+    #                          femaleC_train_set,
+    #                          femaleE_train_set,
+    #                          femaleA_train_set,
+    #                          femaleN_train_set]
+    # female_validation_set = [femaleO_validation_set,
+    #                          femaleC_validation_set,
+    #                          femaleE_validation_set,
+    #                          femaleA_validation_set,
+    #                          femaleN_validation_set]
+    return comb_train_set, comb_validation_set
 
-    female_train_set =      [femaleO_train_set,
-                             femaleC_train_set,
-                             femaleE_train_set,
-                             femaleA_train_set,
-                             femaleN_train_set]
-    female_validation_set = [femaleO_validation_set,
-                             femaleC_validation_set,
-                             femaleE_validation_set,
-                             femaleA_validation_set,
-                             femaleN_validation_set]
-    return comb_train_set, comb_validation_set, male_train_set, male_validation_set, female_train_set, female_validation_set
+comb_train_set, comb_validation_set = build_dataset('multi_modality_csv')
 
-# build Facebody comb_train_set, comb_validation_set using build_dataset
-Fb_comb_train_set, Fb_comb_validation_set, Fb_male_train_set, Fb_male_validation_set, Fb_female_train_set, Fb_female_validation_set = build_dataset('../Features/Face Body', 'Facebody')
-
-Bt_comb_train_set, Bt_comb_validation_set, Bt_male_train_set, Bt_male_validation_set, Bt_female_train_set, Bt_female_validation_set = build_dataset('../Features/Bert', 'Bert')
+# Bt_comb_train_set, Bt_comb_validation_set, Bt_male_train_set, Bt_male_validation_set, Bt_female_train_set, Bt_female_validation_set = build_dataset('../Features/Bert', 'Bert')
 
 # Facebody_comb_train_set = build_dataset()
 model_names = ['Model_O','Model_C','Model_E','Model_A','Model_N']
@@ -361,11 +354,12 @@ Trials: 100
 print("Combined TRAINING BEGINS")
 # iter for 5 OCEAN dataset
 for i in range(5):
-    Fb_train = Fb_comb_train_set[i]
-    Fb_val = Fb_comb_validation_set[i]
+    #train_comb_fb, train_comb_bt, train_O
+    # comb_train_set, comb_validation_set
 
-    Bt_train = Bt_comb_train_set[i]
-    Bt_val = Bt_comb_validation_set[i]
+
+    train = comb_train_set[i]
+    val = comb_train_set[i]
 
     print(model_names[i])
     # Define a regressor
@@ -378,11 +372,11 @@ for i in range(5):
       max_trials=100, overwrite=True, project_name='comb'+model_names[i], directory='./Dump Data')
 
     # Feed the tensorflow Dataset to the regressor.
-    total_reg.fit([Fb_train[0], Fb_train[0]],[Fb_train[1]], epochs=1000, validation_split=0.15)
+    total_reg.fit([train[0], train[1]], [train[2]], epochs=1000, validation_split=0.15)
     # Convert to model
     total_model = total_reg.export_model()
     # Evaluate on validation set
-    evaluation = total_reg.evaluate([Fb_val[0], Fb_val[0]],[Fb_val[1]])
+    evaluation = total_reg.evaluate([val[0], val[1]],[val[2]])
     # Write loss and error to a file
     with open('./Dump Data/'+training_name+'combined_eval_val.txt', 'a') as f:
       f.write(training_name+'combined_'+model_names[i]+' -> ')
