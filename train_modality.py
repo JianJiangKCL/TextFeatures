@@ -152,31 +152,31 @@ def main(args):
     def train_setting(setting, train_set, val_set, path):
         print(f"{setting} TRAINING BEGINS")
         # iter for 5 OCEAN dataset
-        for i in range(2, 5):
+        i = int(args.OCEAN_id)
 
-            train = train_set[i]
-            val = val_set[i]
-            print(model_names[i])
-            # Define a regressor
-            total_reg = ak.AutoModel(
-              # by default, RegrssionHead uses MSE
-              inputs=[ak.StructuredDataInput(), ak.StructuredDataInput()],
-              outputs=[ak.RegressionHead()],
-              max_trials=100, overwrite=True, project_name=setting+model_names[i], directory='./Dump Data')
+        train = train_set[i]
+        val = val_set[i]
+        print(model_names[i])
+        # Define a regressor
+        total_reg = ak.AutoModel(
+          # by default, RegrssionHead uses MSE
+          inputs=[ak.StructuredDataInput(), ak.StructuredDataInput()],
+          outputs=[ak.RegressionHead()],
+          max_trials=100, overwrite=True, project_name=setting+model_names[i], directory='./Dump Data')
 
-            # Feed the tensorflow Dataset to the regressor.
-            total_reg.fit([train[0], train[1]], [train[2]], epochs=1000, validation_split=0.15)
-            # Convert to model
-            total_model = total_reg.export_model()
-            # Evaluate on validation set
-            evaluation = total_reg.evaluate([val[0], val[1]], [val[2]])
-            # Write loss and error to a file
-            with open('./Dump Data/'+training_name + setting+'_eval_val.txt', 'a') as f:
-              f.write(training_name+setting+'_'+model_names[i]+' -> ')
-              f.write(str(evaluation))
-              f.write('\n')
-            # Save current model
-            total_model.save(path+'/'+model_names[i])
+        # Feed the tensorflow Dataset to the regressor.
+        total_reg.fit([train[0], train[1]], [train[2]], epochs=1000, validation_split=0.15)
+        # Convert to model
+        total_model = total_reg.export_model()
+        # Evaluate on validation set
+        evaluation = total_reg.evaluate([val[0], val[1]], [val[2]])
+        # Write loss and error to a file
+        with open('./Dump Data/'+training_name + setting+'_eval_val.txt', 'a') as f:
+          f.write(training_name+setting+'_'+model_names[i]+' -> ')
+          f.write(str(evaluation))
+          f.write('\n')
+        # Save current model
+        total_model.save(path+'/'+model_names[i])
 
         print(f"{setting} training done!!")
 
@@ -185,13 +185,17 @@ def main(args):
     # train_setting('Male', M_train_set, M_val_set, male_path)
     # train_setting('Female', F_train_set, F_val_set, female_path)
     print('start training..')
-    train_setting('Combined', comb_train_set, comb_val_set, combined_path)
+    if args.setting == 'comb':
+        train_setting('Combined', comb_train_set, comb_val_set, combined_path)
+    elif args.setting == 'male':
+        train_setting('Male', M_train_set, M_val_set, male_path)
+    elif args.setting == 'female':
+        train_setting('Female', F_train_set, F_val_set, female_path)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--OCEAN_id", type=str)
-    # parser.add_argument("--src_dir", type=str, default="")
     parser.add_argument("--setting", type=str)
     args = parser.parse_args()
     main(args)
