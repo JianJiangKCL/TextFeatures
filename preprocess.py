@@ -64,10 +64,11 @@ def process_srt_files(dir_path):
         try:
             subs = pysrt.open(path, encoding='utf-8')
         except:
-            print(path)
+            print(f"cannot process {path}")
         # subs = pysrt.open(path, encoding='utf-8')
 
         file_name = path.stem
+        video_name = int(file_name[:6])
         label_part1 = int(file_name[:3])
         label_part2 = int(file_name[3:6])
         talk_type = file_name[7:]
@@ -80,18 +81,42 @@ def process_srt_files(dir_path):
         sub_part1, sub_part2 = divide_participants(subs)
         chunks_part1 = chunk_subs(sub_part1)
         chunks_part2 = chunk_subs(sub_part2)
-
+        minutes_counter_part1 = 0
         for chunk in chunks_part1:
             item = combining_subs(chunk)
             # talk_type is for checking only
-            item.append(talk_type)
-            item.append(label_part1)
-            data[label_part1].append(item)
+            data_point = {}
+            data_point['text'] = item[0]
+            data_point['duration'] = item[1]
+            data_point['talk_type'] = talk_type
+            data_point['participant_id'] = label_part1
+            data_point['minutes_counter'] = minutes_counter_part1
+            data_point['video_name'] = video_name
+            # item.append(talk_type)
+            # item.append(label_part1)
+            # item.append(f"minute{minutes_counter_part1}")
+            minutes_counter_part1 += 1
+
+            data[label_part1].append(data_point)
+
+        minutes_counter_part2 = 0
         for chunk in chunks_part2:
             item = combining_subs(chunk)
-            item.append(talk_type)
-            item.append(label_part2)
-            data[label_part2].append(item)
+            data_point = {}
+            data_point['text'] = item[0]
+            data_point['duration'] = item[1]
+            data_point['talk_type'] = talk_type
+            data_point['participant_id'] = label_part2
+            data_point['minutes_counter'] = minutes_counter_part2
+            data_point['video_name'] = video_name
+            # item.append(talk_type)
+            # item.append(label_part2)
+            # item.append(f"minute{minutes_counter_part2}")
+            minutes_counter_part2 += 1
+            data[label_part2].append(data_point)
+    # sort data by id
+    items = data.items()
+    data_sorted = {k: v for k, v in sorted(data.items(), key=lambda item: item[0])}
     data_np = []
     for _, chunks in data.items():
         for chunk in chunks:
@@ -105,14 +130,14 @@ def main():
     # dir_path = 'training_data_transcripts'
     dir_path = 'test_data_transcripts'
     # dir_path = 'valid_data_transcripts'
+    results_dir = 'split_data'
     for dir_path in ['training_data_transcripts', 'test_data_transcripts', 'valid_data_transcripts']:
         data = process_srt_files(dir_path)
         file_name = dir_path.split('_')[0]
-        loaded_data = np.load(file_name + '_raw_data.npy')
+        loaded_data = np.load(file_name + '_raw_data.npy', allow_pickle=True)
         is_equal = np.array_equal(data, loaded_data)
 
         print(is_equal)
-
 
 if __name__ == '__main__':
     ##################

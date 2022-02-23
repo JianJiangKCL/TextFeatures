@@ -1,13 +1,16 @@
 import os
 import pandas as pd
 
-# Bt = pd.read_csv('Features/Bert/train_data.csv')
-# Bt_validation = pd.read_csv('Features/Bert/validation_data.csv')
-# Bt_test_data = pd.read_csv('Features/Bert/test_data.csv')
-#
-# Fb = pd.read_csv('Features/Face Body/train_data.csv')
-# Fb_validation = pd.read_csv('Features/Face Body/validation_data.csv')
-# Fb_test_data = pd.read_csv('Features/Face Body/test_data.csv')
+
+def df_drop_cols(df, cols):
+    for col in cols:
+        try:
+            df.drop(
+                [col], axis=1, inplace=True)
+        except:
+            pass
+    return df
+
 
 def convert(l, suffix):
     # it = iter(l)
@@ -22,13 +25,8 @@ def merge(modality1, modality2, mode):
     Fb = pd.read_csv(f'Features/{modality1}/{mode}_data.csv')
     Bt = pd.read_csv(f'Features/{modality2}/{mode}_data.csv')
     drop_cols = ['Unnamed: 0', 'OPENMINDEDNESS_Z', 'CONSCIENTIOUSNESS_Z', 'EXTRAVERSION_Z', 'AGREEABLENESS_Z', 'NEGATIVEEMOTIONALITY_Z', 'gender']
-    for col in drop_cols:
-        try:
-            Fb.drop(
-                [col], axis=1, inplace=True)
-        except:
-            pass
-    
+    Fb = df_drop_cols(Fb, drop_cols)
+
     #todo a check_moda func
     fb_rename_cols = [i for i in range(0, 552)]
     
@@ -39,23 +37,16 @@ def merge(modality1, modality2, mode):
     bt_rename_cols = convert(bt_rename_cols, 'bt')
     Bt.rename(columns=bt_rename_cols, inplace=True)
 
-    f_merged = pd.merge(Bt, Fb, on=['ID_y', 'minute',
-                                          'session'], how='inner')
-    # f_merged = pd.merge(Bt, Fb, on=['ID_y', 'minute', 'session'], how='inner')
     f_merged = Bt.merge(Fb, on=['ID_y', 'minute', 'session', 'Video'], how='inner')
 
-    drop_cols = ['Unnamed: 0', 'Video']
-    for col in drop_cols:
-        try:
-            f_merged.drop(
-                [col], axis=1, inplace=True)
-        except:
-            pass
-    # f_merged.drop(['Video'], axis=1, inplace=True)
+    drop_cols = ['Unnamed: 0', 'Video', 'Unnamed: 0.1']
+
+    f_merged = df_drop_cols(f_merged, drop_cols)
+
     output_dir = 'multi_modality_csv'
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-    f_merged.to_csv(f'{output_dir}/{mode}.csv')
+    f_merged.to_csv(f'{output_dir}/{mode}_data.csv')
     return f_merged
 
 for mode in ['train', 'test', 'validation']:
